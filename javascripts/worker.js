@@ -1,34 +1,36 @@
 importScripts('vendor/crypto.js');
 
-var config = {};
+worker = {
+  config: {},
 
-function setup(new_config) {
-  new_config['dec_key']  = CryptoJS.enc.Base64.parse(new_config.key);
-  new_config['dec_salt'] = CryptoJS.enc.Base64.parse(new_config.salt);
-  config                 = new_config;
-  postMessage({state: 'ready'});
-}
+  setup: function(new_config) {
+    new_config['dec_key']  = CryptoJS.enc.Base64.parse(new_config.key);
+    new_config['dec_salt'] = CryptoJS.enc.Base64.parse(new_config.salt);
+    config                 = new_config;
+    postMessage({state: 'ready'});
+  },
 
-function attempt_decode(pass) {
-  var decryptOptions = {keySize: 5, iterations: 1000},
-      code  = CryptoJS.PBKDF2(pass, config.dec_salt, decryptOptions),
-      state = 'failure';
+  attempt_decode: function(password) {
+    var decryptOptions = {keySize: 5, iterations: 1000},
+        code  = CryptoJS.PBKDF2(password, config.dec_salt, decryptOptions),
+        state = 'failure';
 
-  if (code.toString() == config.dec_key) {
-    state = 'success';
+    if (code.toString() == config.dec_key) {
+      state = 'success';
+    }
+    postMessage({state: state, key: code.toString(), result: password})
+  },
+
+  handlePostMessage: function(e) {
+    var message = e.data;
+
+    if (message.task == 'setup') {
+      worker.setup(message);
+
+    } else if (message.task == 'decode') {
+      worker.attempt_decode(message.pass);
+    }
   }
-  postMessage({state: state, key: code.toString(), result: pass})
-}
+};
 
-function handlePostMessage(e) {
-  var message = e.data;
-
-  if (message.task == 'setup') {
-    setup(message);
-
-  } else if (message.task == 'decode') {
-    attempt_decode(message.pass);
-  }
-}
-
-onmessage = handlePostMessage;
+onmessage = worker.handlePostMessage;

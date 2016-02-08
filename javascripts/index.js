@@ -45,6 +45,9 @@ var workerPool = [];
 for (i = 0; i < poolSize; ++i) {
   var worker = new Worker('javascripts/worker.js');
   worker.onmessage = handleWorkerFinish;
+  worker.onerror = function(e){
+    throw new Error(e.message + " (" + e.filename + ":" + e.lineno + ")");
+  };
   workerPool.push(worker);
 }
 
