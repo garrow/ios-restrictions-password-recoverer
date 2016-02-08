@@ -64,6 +64,6 @@ function triggerWorker(worker) {
 
 
 workerPool.map(function(worker, _, _){
-  worker.postMessage({task: 'setup', key: config.key, salt: config.salt});
+  worker.postMessage({task: 'setup', keyBase64: config.key, saltBase64: config.salt});
   triggerWorker(worker);
 });
